@@ -4,7 +4,8 @@
 
 const config = {
   appName: 'Gin-Vue-Admin',
-  appLogo: 'https://www.gin-vue-admin.com/img/logo.png',
+  // appLogo: 'https://52152121.xyz:802/s/9jhynyvz.png',
+  appLogo: 'https://52152121.xyz:802/s/w759hodp.jpg',
   showViteLogo: true,
   logs: [],
 }
