@@ -11,6 +11,8 @@ import 'leaflet/dist/leaflet.css'
 import { onBeforeUnmount, onMounted } from 'vue'
 import { MyBtn, Util } from './extend'
 
+import { KEY_GAODE_DAOHANG, MAP_TILELAYER, PARAMS_DEFAULT_BACKGROUND_COLOR } from './mapConfig'
+
 import PNG_START from './img/start.png'
 import PNG_END from './img/end.png'
 
@@ -31,34 +33,41 @@ const ins_group = {}
 onMounted(() => {
   ins_map = L.map(props.id, {
     zoom: 10,
-    center: [31.25, 120.6]
+    center: [31.25, 120.6],
+    attributionControl: false
   })
+  ins_map.getContainer().style.backgroundColor = PARAMS_DEFAULT_BACKGROUND_COLOR
 
-  ins_map.addControl(new MyBtn([
-    { text: '导航', title: 'btn1', class: 'btn1' },
-    { text: 'btn2', title: 'btn2', class: 'btn2' },
-    { text: 'btn4', title: 'btn4', class: 'btn4' },
-  ]))
+  const LIST_BTN = [
+    { text: '×', title: '清除图层', class: 'btn2' },
+    { text: '⋙', title: '导航', class: 'btn1' },
+    { text: '⇵', title: '更改底图', class: 'btn3', instance: true },
+  ]
+  ins_map.addControl(new MyBtn(LIST_BTN))
 
+  let currentMapId = 1
   ins_map.on('btnClick', (e) => {
     console.log(e)
     switch (e.title) {
-      case 'btn1':
+      case '导航':
         daohang()
         break
-      case 'btn2':
+      case '清除图层':
         removeByRef('LAYER_1')
-        break
-      case 'btn4':
         removeByRef('LAYER_DAOHANG')
         removeByRef('LAYER_DAOHANG_LINE')
+        break
+      case '更改底图':
+        switchBase(currentMapId)
+        currentMapId++
+        if (currentMapId > MAP_TILELAYER.length) currentMapId = 1
         break
       default:
         break
     }
   })
 
-  addTile()
+  LIST_BTN.forEach(i => i.instance && ins_map.fire('btnClick', i))
 })
 
 onBeforeUnmount(() => {
@@ -76,34 +85,27 @@ function getGroup(layerName) {
   return ins_group[layerName]
 }
 
-function switchTianDiTu(id, KEY_TIANDITU) {
-  const arr = [
-    { id: 1, name: '天地图', url: [{ url: 'http://t{s}.tianditu.gov.cn/vec_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=' + KEY_TIANDITU }, { url: 'http://t{s}.tianditu.gov.cn/cva_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cva&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=' + KEY_TIANDITU }] },
-    { id: 2, name: '天地图影像', url: [{ url: 'http://t{s}.tianditu.gov.cn/img_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=' + KEY_TIANDITU }, { url: 'http://t{s}.tianditu.gov.cn/cia_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cia&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=' + KEY_TIANDITU }] },
-    { id: 3, name: '天地图地形', url: [{ url: 'http://t{s}.tianditu.gov.cn/ter_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ter&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=' + KEY_TIANDITU }, { url: 'http://t{s}.tianditu.gov.cn/cta_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cta&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=' + KEY_TIANDITU }] },
-  ]
-
+const switchBase = (id) => {
   const group = removeByRef('BASE_MAP')
-  const to = arr.filter((i) => (i.id === id))[0]
+  const to = MAP_TILELAYER.filter((i) => (i.id === id))[0]
   if (!to) return
 
-  to.url.forEach((i) => group.addLayer(L.tileLayer(i.url, { subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'] })))
-}
+  to.url.forEach((i) => {
+    let layer
+    switch (to.type) {
+      case 'tileLayer':
+        layer = L.tileLayer(i, to.option)
+        break
+      case 'wms':
+        layer = L.tileLayer.wms(i, to.option)
+        break
+      default:
+        break
+    }
+    layer && group.addLayer(layer)
+  })
 
-const addTile = () => {
-  const NAME_LAYER = 'chinaosm:osm'
-
-  const layer_default = { layers: NAME_LAYER, format: 'image/png', transparent: true }
-  // const layer_blue = Object.assign({ styles: 'blue' }, layer_default)
-
-  const layer1 = L.tileLayer.wms(`/mapServer/geoserver/${NAME_LAYER.split(':').shift()}/wms`, layer_default)
-  // const layer2 = L.tileLayer.wms(`/mapServer/geoserver/${NAME_LAYER.split(':').shift()}/wms`, layer_blue)
-
-  ins_map.addLayer(layer1)
-
-  // L.control.layers({ '亮色': layer1, '暗黑': layer2 }, {}, { collapsed: false }).addTo(ins_map)
-  // ins_map.on('baselayerchange', e => { ins_map.getContainer().style.backgroundColor = e.name === '暗黑' ? '#4952a0' : '#ffffff' })
-  // ins_map.addLayer(layer1)
+  ins_map.getContainer().style.backgroundColor = to.bg || PARAMS_DEFAULT_BACKGROUND_COLOR
 }
 
 function daohang() {
@@ -148,7 +150,7 @@ function _api_daohang(startLatLng, endLatLng) {
   const p_s = Util.wgs842gcj(startLatLng.lng, startLatLng.lat)
   const p_e = Util.wgs842gcj(endLatLng.lng, endLatLng.lat)
 
-  fetch(`https://restapi.amap.com/v3/direction/driving?origin=${p_s}&destination=${p_e}&extensions=all&key=${'c922dabc01b25446e8614a1d9ddafb75'}`)
+  fetch(`https://restapi.amap.com/v3/direction/driving?origin=${p_s}&destination=${p_e}&extensions=all&key=${KEY_GAODE_DAOHANG}`)
     .then(r => r.json()).then(r => {
       if (!r.status || r.status !== '1') return
       r.route.paths.forEach((i) => {
@@ -175,5 +177,6 @@ function _api_daohang(startLatLng, endLatLng) {
 .leaflet-control-btn a {
   padding: 2px;
   border-radius: 2px;
+  cursor: pointer;
 }
 </style>
