@@ -15,9 +15,7 @@ export default class MyBtn extends L.Control {
         list &&
             list.length &&
             list.forEach((i) => {
-                this._create(i.text, i.title, cname + i.class, container, () =>
-                    map.fire('btnClick', i)
-                )
+                this._create(i.text, i.title, cname + i.class, container, () => map.fire('btnClick', i))
             })
 
         return container
