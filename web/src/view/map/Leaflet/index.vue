@@ -47,7 +47,6 @@ onMounted(() => {
 
   let currentMapId = 1
   ins_map.on('btnClick', (e) => {
-    console.log(e)
     switch (e.title) {
       case '导航':
         daohang()
