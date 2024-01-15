@@ -9,6 +9,9 @@
 <script setup>
 import { Map, Marker } from 'mapbox-gl'
 
+import PulsingDot from "./extend/PulsingDot"
+import { util_dataToJson } from './extend/util'
+
 import 'mapbox-gl/dist/mapbox-gl.css'
 const TOKEN = 'pk.eyJ1IjoiZXZpYWZhbiIsImEiOiJjbHI3ZXBibXIyOHl3MmtteTYzMG1qdWdrIn0.qYhXUZQY-rWLk0uWKRCATQ'
 
@@ -45,7 +48,16 @@ const initMap = () => {
     })
 
 
-    addMarker()
+    ins_map.on('load', () => {
+        ins_map.addImage("pulsing-dot", new PulsingDot({ map: ins_map }), { pixelRatio: 3 })
+
+        const data = [
+            { name: 'name1', value: 'value1', lng: 121.22, lat: 31.53 },
+            { name: 'name1', value: 'value1', lng: 121.22, lat: 31.51 }
+        ]
+        addHighlight(data)
+        addMarker()
+    })
 }
 
 const addMarker = () => {
@@ -73,6 +85,28 @@ const addMarker = () => {
         return el
     }
 }
+
+
+const removeHighlight = () => {
+    ins_map.getLayer("no-clickable-highlight-point") && ins_map.removeLayer("no-clickable-highlight-point")
+    ins_map.getSource("layer-source-highligh") && ins_map.removeSource("layer-source-highligh")
+}
+
+const addHighlight = (data) => {
+    removeHighlight()
+    const sourceName = "layer-source-highligh"
+
+    console.log(util_dataToJson(data, "lng,lat"));
+
+    !ins_map.getSource(sourceName) && ins_map.addSource(sourceName, { type: "geojson", data: util_dataToJson(data, "lng,lat"), clusterRadius: 50 })
+    !ins_map.getLayer('no-clickable-highlight-point') && ins_map.addLayer({
+        id: "no-clickable-highlight-point",
+        type: "symbol",
+        source: sourceName,
+        layout: { "icon-image": "pulsing-dot", "icon-size": 0.5, "icon-anchor": "center", "icon-allow-overlap": true },
+    })
+}
+
 </script>
 
 <style lang="scss" scoped>
