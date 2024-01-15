@@ -1,11 +1,9 @@
-<!-- eslint-disable -->
 <template>
     <div class="gva-table-box">
         <div :id="props.id" class="map" />
     </div>
 </template>
 
-<!-- eslint-disable -->
 <script setup>
 import { Map, Marker } from 'mapbox-gl'
 
