@@ -44,6 +44,34 @@ const initMap = () => {
         light: { main: { intensity: 1, shadow: !0, shadowQuality: 'low' }, ambient: { intensity: 0 } },
     })
 
+
+    addMarker()
+}
+
+const addMarker = () => {
+    const data = [
+        { name: 'name1', value: 'value1', lng: 121.22, lat: 31.55 }
+    ]
+    data && data.length && data.forEach(i => {
+        const { lng, lat } = i || {}
+        const layer = new Marker({ element: _c(i).firstChild, offset: [0, 0] }).setLngLat([lng, lat])
+        layer.addTo(ins_map)
+    })
+
+
+    function _c(feature) {
+        const { name, value } = feature || {}
+        const el = document.createElement("div")
+        el.innerHTML = `<div style="cursor:pointer; background:#66ccff80; text-align:center; border-radius:10px; padding:5px; ">
+                <h2>${name}</h2>
+                <p>${value}</p>
+            </div>`
+        el.firstChild.onclick = () => {
+            console.log(feature)
+        }
+
+        return el
+    }
 }
 </script>
 
