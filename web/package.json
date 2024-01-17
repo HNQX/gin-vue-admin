@@ -24,6 +24,7 @@
         "highlight.js": "^11.8.0",
         "js-cookie": "^3.0.5",
         "leaflet": "^1.9.4",
+        "leaflet.locatecontrol": "^0.79.0",
         "mapbox-gl": "^3.0.1",
         "marked": "4.3.0",
         "mitt": "^3.0.1",

@@ -1,4 +1,3 @@
-/* eslint-disable indent */
 import L from 'leaflet'
 
 export default class MyBtn extends L.Control {

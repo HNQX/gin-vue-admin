@@ -8,6 +8,10 @@
 <script setup>
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+
+import 'leaflet.locatecontrol' // Import plugin
+import 'leaflet.locatecontrol/dist/L.Control.Locate.min.css' // Import styles
+
 import { onBeforeUnmount, onMounted } from 'vue'
 import { MyBtn, Util } from './extend'
 
@@ -38,6 +42,8 @@ onMounted(() => {
   })
   ins_map.getContainer().style.backgroundColor = PARAMS_DEFAULT_BACKGROUND_COLOR
 
+  L.control.locate().addTo(ins_map)
+
   const LIST_BTN = [
     { text: '×', title: '清除图层', class: 'btn2' },
     { text: '⋙', title: '导航', class: 'btn1' },
@@ -67,6 +73,8 @@ onMounted(() => {
   })
 
   LIST_BTN.forEach(i => i.instance && ins_map.fire('btnClick', i))
+
+
 })
 
 onBeforeUnmount(() => {

@@ -1,4 +1,3 @@
-/* eslint-disable indent */
 import gcoord from 'gcoord'
 export const wgs842gcj = (lng, lat) => gcoord.transform([Number(lng), Number(lat)], gcoord.WGS84, gcoord.GCJ02)
 export const gcj2wgs84 = (lng, lat) => gcoord.transform([Number(lng), Number(lat)], gcoord.GCJ02, gcoord.WGS84)
