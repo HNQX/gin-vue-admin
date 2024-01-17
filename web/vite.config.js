@@ -11,6 +11,7 @@ import vuePlugin from '@vitejs/plugin-vue'
 import GvaPosition from './vitePlugin/gvaPosition'
 import GvaPositionServer from './vitePlugin/codeServer'
 import fullImportPlugin from './vitePlugin/fullImport/fullImport.js'
+import { svgBuilder } from './vitePlugin/svgIcon/svgIcon.js'
 // @see https://cn.vitejs.dev/config/
 export default ({
   command,
@@ -66,7 +67,7 @@ export default ({
         // detail: https://cli.vuejs.org/config/#devserver-proxy
         [process.env.VITE_BASE_API]: { // 需要代理的路径   例如 '/api'
           target: `${process.env.VITE_BASE_PATH}:${process.env.VITE_SERVER_PORT}/`, // 代理到 目标路径
-          changeOrigin: false,
+          changeOrigin: true,
           rewrite: path => path.replace(new RegExp('^' + process.env.VITE_BASE_API), ''),
         },
         [process.env.VITE_MAP_SERVER]: {
@@ -92,6 +93,7 @@ export default ({
         targets: ['Android > 39', 'Chrome >= 60', 'Safari >= 10.1', 'iOS >= 10.3', 'Firefox >= 54', 'Edge >= 15'],
       }),
       vuePlugin(),
+      svgBuilder('./src/assets/icons/'),
       [Banner(`\n Build based on gin-vue-admin \n Time : ${timestamp}`)]
     ],
     css: {
