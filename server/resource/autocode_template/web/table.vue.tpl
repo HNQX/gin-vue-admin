@@ -86,16 +86,7 @@
     <div class="gva-table-box">
         <div class="gva-btn-list">
             <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
-            <el-popover v-model:visible="deleteVisible" :disabled="!multipleSelection.length" placement="top" width="160">
-            <p>确定要删除吗？</p>
-            <div style="text-align: right; margin-top: 8px;">
-                <el-button type="primary" link @click="deleteVisible = false">取消</el-button>
-                <el-button type="primary" @click="onDelete">确定</el-button>
-            </div>
-            <template #reference>
-                <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length" @click="deleteVisible = true">删除</el-button>
-            </template>
-            </el-popover>
+            <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length" @click="onDelete">删除</el-button>
         </div>
         <el-table
         ref="multipleTable"
@@ -196,9 +187,18 @@
             />
         </div>
     </div>
-    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'" destroy-on-close>
-      <el-scrollbar height="500px">
-          <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+    <el-drawer size="800" v-model="dialogFormVisible" :show-close="false" :before-close="closeDialog">
+       <template #title>
+              <div class="flex justify-between items-center">
+                <span class="text-lg">{{"{{"}}type==='create'?'添加':'修改'{{"}}"}}</span>
+                <div>
+                  <el-button type="primary" @click="enterDialog">确 定</el-button>
+                  <el-button @click="closeDialog">取 消</el-button>
+                </div>
+              </div>
+            </template>
+
+          <el-form :model="formData" label-position="top" ref="elFormRef" :rules="rule" label-width="80px">
         {{- range .Fields}}
             <el-form-item label="{{.FieldDesc}}:"  prop="{{.FieldJson}}" >
           {{- if eq .FieldType "bool" }}
@@ -255,17 +255,14 @@
             </el-form-item>
           {{- end }}
           </el-form>
-      </el-scrollbar>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="closeDialog">取 消</el-button>
-          <el-button type="primary" @click="enterDialog">确 定</el-button>
-        </div>
-      </template>
-    </el-dialog>
+    </el-drawer>
 
-    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情" destroy-on-close>
-      <el-scrollbar height="550px">
+    <el-drawer size="800" v-model="detailShow" :before-close="closeDetailShow" title="查看详情" destroy-on-close>
+          <template #title>
+             <div class="flex justify-between items-center">
+               <span class="text-lg">查看详情</span>
+             </div>
+         </template>
         <el-descriptions :column="1" border>
         {{- range .Fields}}
                 <el-descriptions-item label="{{ .FieldDesc }}">
@@ -302,8 +299,7 @@
                 </el-descriptions-item>
         {{- end }}
         </el-descriptions>
-      </el-scrollbar>
-    </el-dialog>
+    </el-drawer>
   </div>
 </template>
 
@@ -464,7 +460,7 @@ const sortChange = ({ prop, order }) => {
 
   let sort = sortMap[prop]
   if(!sort){
-   sort = prop.replace(/[A-Z]/g, match => _${match.toLowerCase()})
+   sort = prop.replace(/[A-Z]/g, match => `_${match.toLowerCase()}`)
   }
 
   searchInfo.value.sort = sort
@@ -549,12 +545,13 @@ const deleteRow = (row) => {
         })
     }
 
-
-// 批量删除控制标记
-const deleteVisible = ref(false)
-
 // 多选删除
 const onDelete = async() => {
+  ElMessageBox.confirm('确定要删除吗?', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async() => {
       const {{.PrimaryField.FieldJson}}s = []
       if (multipleSelection.value.length === 0) {
         ElMessage({
@@ -576,9 +573,9 @@ const onDelete = async() => {
         if (tableData.value.length === {{.PrimaryField.FieldJson}}s.length && page.value > 1) {
           page.value--
         }
-        deleteVisible.value = false
         getTableData()
       }
+      })
     }
 
 // 行为控制标记（弹窗内部需要增还是改）
