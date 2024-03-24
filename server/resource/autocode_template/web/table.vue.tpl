@@ -40,8 +40,6 @@
             </el-form-item>
             {{- else}}
         <el-form-item label="{{.FieldDesc}}" prop="{{.FieldJson}}">
-
-
         {{- if eq .FieldType "float64" "int"}}
             {{if eq .FieldSearchType "BETWEEN" "NOT BETWEEN"}}
             <el-input v-model.number="searchInfo.start{{.FieldName}}" placeholder="最小值" />
@@ -160,6 +158,12 @@
                              </div>
                         </template>
                     </el-table-column>
+         {{- else if eq .FieldType "json" }}
+          <el-table-column label="{{.FieldDesc}}" width="200">
+              <template #default="scope">
+                  [JSON]
+              </template>
+          </el-table-column>
         {{- else }}
         <el-table-column {{- if .Sort}} sortable{{- end}} align="left" label="{{.FieldDesc}}" prop="{{.FieldJson}}" width="120" />
         {{- end }}
@@ -205,10 +209,20 @@
               <el-switch v-model="formData.{{.FieldJson}}" active-color="#13ce66" inactive-color="#ff4949" active-text="是" inactive-text="否" clearable ></el-switch>
           {{- end }}
           {{- if eq .FieldType "string" }}
+          {{- if .DictType}}
+              <el-select v-model="formData.{{ .FieldJson }}" placeholder="请选择{{.FieldDesc}}" style="width:100%" :clearable="{{.Clearable}}" >
+                <el-option v-for="(item,key) in {{ .DictType }}Options" :key="key" :label="item.label" :value="item.value" />
+              </el-select>
+          {{- else }}
               <el-input v-model="formData.{{.FieldJson}}" :clearable="{{.Clearable}}"  placeholder="请输入{{.FieldDesc}}" />
+          {{- end }}
           {{- end }}
           {{- if eq .FieldType "richtext" }}
               <RichEdit v-model="formData.{{.FieldJson}}"/>
+          {{- end }}
+          {{- if eq .FieldType "json" }}
+              // 此字段为json结构，可以前端自行控制展示和数据绑定模式 需绑定json的key为 formData.{{.FieldJson}} 后端会按照json的类型进行存取
+              {{"{{"}} formData.{{.FieldJson}} {{"}}"}}
           {{- end }}
           {{- if eq .FieldType "int" }}
           {{- if .DictType}}
@@ -293,6 +307,8 @@
                       {{"{{"}} formatDate(formData.{{.FieldJson}}) {{"}}"}}
                    {{- else if eq .FieldType "richtext" }}
                         [富文本内容]
+                   {{- else if eq .FieldType "json" }}
+                        [JSON]
                    {{- else}}
                         {{"{{"}} formData.{{.FieldJson}} {{"}}"}}
                    {{- end }}
@@ -376,6 +392,9 @@ const formData = ref({
         {{- end }}
         {{- if eq .FieldType "file" }}
         {{.FieldJson}}: [],
+        {{- end }}
+        {{- if eq .FieldType "json" }}
+        {{.FieldJson}}: {},
         {{- end }}
         {{- end }}
         })
