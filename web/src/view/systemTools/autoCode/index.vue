@@ -385,6 +385,13 @@
           </el-table-column>
           <el-table-column
             align="left"
+            prop="front"
+            label="前端可见"
+          >
+            <template #default="{row}"> <el-checkbox v-model="row.front" /> </template>
+          </el-table-column>
+          <el-table-column
+            align="left"
             prop="fieldJson"
             width="160px"
             label="字段Json"
@@ -702,11 +709,17 @@ const fieldTemplate = {
   defaultValue: '',
   require: false,
   sort: false,
+  front: true,
   errorText: '',
   primaryKey: false,
   clearable: true,
   fieldSearchType: '',
-  dictType: ''
+  dictType: '',
+  dataSource: {
+    table: '',
+    label: '',
+    value: ''
+  }
 }
 const route = useRoute()
 const router = useRouter()
@@ -990,7 +1003,13 @@ const getColumnFunc = async() => {
                 errorText: '',
                 clearable: true,
                 fieldSearchType: '',
-                dictType: ''
+                dictType: '',
+                front: true,
+                dataSource: {
+                  table: '',
+                  label: '',
+                  value: ''
+                }
               })
             }
           })
