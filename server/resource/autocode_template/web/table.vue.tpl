@@ -99,7 +99,7 @@
         >
         <el-table-column type="selection" width="55" />
         {{ if .GvaModel }}
-        <el-table-column align="left" label="日期" width="180">
+        <el-table-column align="left" label="日期" prop="createdAt" width="180">
             <template #default="scope">{{ "{{ formatDate(scope.row.CreatedAt) }}" }}</template>
         </el-table-column>
         {{ end }}
@@ -107,7 +107,13 @@
         {{- if .CheckDataSource }}
         <el-table-column {{- if .Sort}} sortable{{- end}} align="left" label="{{.FieldDesc}}" prop="{{.FieldJson}}" width="120">
           <template #default="scope">
-          {{"{{"}} filterDataSource(dataSource.{{.FieldJson}},scope.row.{{.FieldJson}}) {{"}}"}}
+                {{if eq .DataSource.Association 2}}
+                    <el-tag v-for="(item,key) in filterDataSource(dataSource.{{.FieldJson}},scope.row.{{.FieldJson}})" :key="key">
+                        {{ "{{ item }}" }}
+                    </el-tag>
+                {{ else }}
+                    <span>{{"{{"}} filterDataSource(dataSource.{{.FieldJson}},scope.row.{{.FieldJson}}) {{"}}"}}</span>
+                {{ end }}
          </template>
          </el-table-column>
         {{- else if .DictType}}
@@ -121,17 +127,17 @@
             <template #default="scope">{{"{{"}} formatBoolean(scope.row.{{.FieldJson}}) {{"}}"}}</template>
         </el-table-column>
          {{- else if eq .FieldType "time.Time" }}
-         <el-table-column {{- if .Sort}} sortable{{- end}} align="left" label="{{.FieldDesc}}" width="180">
+         <el-table-column {{- if .Sort}} sortable{{- end}} align="left" label="{{.FieldDesc}}" prop="{{.FieldJson}}" width="180">
             <template #default="scope">{{"{{"}} formatDate(scope.row.{{.FieldJson}}) {{"}}"}}</template>
          </el-table-column>
           {{- else if eq .FieldType "picture" }}
-          <el-table-column label="{{.FieldDesc}}" width="200">
+          <el-table-column label="{{.FieldDesc}}" prop="{{.FieldJson}}" width="200">
               <template #default="scope">
                 <el-image style="width: 100px; height: 100px" :src="getUrl(scope.row.{{.FieldJson}})" fit="cover"/>
               </template>
           </el-table-column>
            {{- else if eq .FieldType "pictures" }}
-           <el-table-column label="{{.FieldDesc}}" width="200">
+           <el-table-column label="{{.FieldDesc}}" prop="{{.FieldJson}}" width="200">
               <template #default="scope">
                  <div class="multiple-img-box">
                     <el-image v-for="(item,index) in scope.row.{{.FieldJson}}" :key="index" style="width: 80px; height: 80px" :src="getUrl(item)" fit="cover"/>
@@ -139,7 +145,7 @@
               </template>
            </el-table-column>
            {{- else if eq .FieldType "video" }}
-           <el-table-column label="{{.FieldDesc}}" width="200">
+           <el-table-column label="{{.FieldDesc}}" prop="{{.FieldJson}}" width="200">
               <template #default="scope">
                <video
                   style="width: 100px; height: 100px"
@@ -151,13 +157,13 @@
               </template>
            </el-table-column>
            {{- else if eq .FieldType "richtext" }}
-                      <el-table-column label="{{.FieldDesc}}" width="200">
+                      <el-table-column label="{{.FieldDesc}}" prop="{{.FieldJson}}" width="200">
                          <template #default="scope">
                             [富文本内容]
                          </template>
                       </el-table-column>
            {{- else if eq .FieldType "file" }}
-                    <el-table-column label="{{.FieldDesc}}" width="200">
+                    <el-table-column label="{{.FieldDesc}}" prop="{{.FieldJson}}" width="200">
                         <template #default="scope">
                              <div class="file-list">
                                <el-tag v-for="file in scope.row.{{.FieldJson}}" :key="file.uid">{{"{{"}}file.name{{"}}"}}</el-tag>
@@ -165,7 +171,7 @@
                         </template>
                     </el-table-column>
          {{- else if eq .FieldType "json" }}
-          <el-table-column label="{{.FieldDesc}}" width="200">
+          <el-table-column label="{{.FieldDesc}}" prop="{{.FieldJson}}" width="200">
               <template #default="scope">
                   [JSON]
               </template>
@@ -176,10 +182,6 @@
         {{- end }}
         <el-table-column align="left" label="操作" fixed="right" min-width="240">
             <template #default="scope">
-            <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">
-                <el-icon style="margin-right: 5px"><InfoFilled /></el-icon>
-                查看详情
-            </el-button>
             <el-button type="primary" link icon="edit" class="table-button" @click="update{{.StructName}}Func(scope.row)">变更</el-button>
             <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
             </template>
@@ -197,7 +199,7 @@
             />
         </div>
     </div>
-    <el-drawer size="800" v-model="dialogFormVisible" :show-close="false" :before-close="closeDialog">
+    <el-drawer destroy-on-close size="800" v-model="dialogFormVisible" :show-close="false" :before-close="closeDialog">
        <template #header>
               <div class="flex justify-between items-center">
                 <span class="text-lg">{{"{{"}}type==='create'?'添加':'修改'{{"}}"}}</span>
@@ -212,7 +214,7 @@
         {{- range .FrontFields}}
             <el-form-item label="{{.FieldDesc}}:"  prop="{{.FieldJson}}" >
           {{- if .CheckDataSource}}
-            <el-select v-model="formData.{{.FieldJson}}" placeholder="请选择{{.FieldDesc}}" style="width:100%" :clearable="{{.Clearable}}" >
+            <el-select {{if eq .DataSource.Association 2}} multiple {{ end }} v-model="formData.{{.FieldJson}}" placeholder="请选择{{.FieldDesc}}" style="width:100%" :clearable="{{.Clearable}}" >
               <el-option v-for="(item,key) in dataSource.{{.FieldJson}}" :key="key" :label="item.label" :value="item.value" />
             </el-select>
           {{- else }}
@@ -235,6 +237,11 @@
               // 此字段为json结构，可以前端自行控制展示和数据绑定模式 需绑定json的key为 formData.{{.FieldJson}} 后端会按照json的类型进行存取
               {{"{{"}} formData.{{.FieldJson}} {{"}}"}}
           {{- end }}
+           {{- if eq .FieldType "array" }}
+           <el-tag v-for="(item,key) in formData.{{.FieldJson}}" :key="key">
+              {{ "{{ item }}" }}
+           </el-tag>
+           {{- end }}
           {{- if eq .FieldType "int" }}
               <el-input v-model.number="formData.{{ .FieldJson }}" :clearable="{{.Clearable}}" placeholder="请输入{{.FieldDesc}}" />
           {{- end }}
@@ -312,7 +319,7 @@ import SelectFile from '@/components/selectFile/selectFile.vue'
 {{- end }}
 
 // 全量引入格式化工具 请按需保留
-import { getDictFunc, formatDate, formatBoolean, filterDict,filterDataSource, ReturnArrImg, onDownloadFile } from '@/utils/format'
+import { getDictFunc, formatDate, formatBoolean, filterDict ,filterDataSource, ReturnArrImg, onDownloadFile } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
 
@@ -358,6 +365,9 @@ const formData = ref({
         {{- end }}
         {{- if eq .FieldType "json" }}
         {{.FieldJson}}: {},
+        {{- end }}
+        {{- if eq .FieldType "array" }}
+        {{.FieldJson}}: [],
         {{- end }}
         {{- end }}
         })
@@ -621,6 +631,9 @@ const closeDialog = () => {
         {{- if eq .FieldType "string" }}
         {{.FieldJson}}: '',
         {{- end }}
+        {{- if eq .FieldType "richtext" }}
+        {{.FieldJson}}: '',
+        {{- end }}
         {{- if eq .FieldType "int" }}
         {{.FieldJson}}: {{- if .DictType }} undefined{{ else }} 0{{- end }},
         {{- end }}
@@ -629,6 +642,21 @@ const closeDialog = () => {
         {{- end }}
         {{- if eq .FieldType "float64" }}
         {{.FieldJson}}: 0,
+        {{- end }}
+        {{- if eq .FieldType "picture" }}
+        {{.FieldJson}}: "",
+        {{- end }}
+        {{- if eq .FieldType "video" }}
+        {{.FieldJson}}: "",
+        {{- end }}
+        {{- if eq .FieldType "pictures" }}
+        {{.FieldJson}}: [],
+        {{- end }}
+        {{- if eq .FieldType "file" }}
+        {{.FieldJson}}: [],
+        {{- end }}
+        {{- if eq .FieldType "json" }}
+        {{.FieldJson}}: {},
         {{- end }}
         {{- end }}
         }

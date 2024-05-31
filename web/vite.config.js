@@ -54,7 +54,7 @@ export default ({
   }
 
   const config = {
-    base: './', // index.html文件所在位置
+    base: '/', // index.html文件所在位置
     root: './', // js导入的资源路径，src
     resolve: {
       alias,
@@ -71,7 +71,7 @@ export default ({
         // detail: https://cli.vuejs.org/config/#devserver-proxy
         [process.env.VITE_BASE_API]: { // 需要代理的路径   例如 '/api'
           target: `${process.env.VITE_BASE_PATH}:${process.env.VITE_SERVER_PORT}/`, // 代理到 目标路径
-          changeOrigin: false,
+          changeOrigin: true,
           rewrite: path => path.replace(new RegExp('^' + process.env.VITE_BASE_API), ''),
         },
         [process.env.VITE_MAP_SERVER]: {

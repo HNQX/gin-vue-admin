@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type SysExportTemplateService struct {
@@ -222,9 +223,14 @@ func (sysExportTemplateService *SysExportTemplateService) ExportExcel(templateID
 		var row []string
 		for _, column := range columns {
 			if len(template.JoinTemplate) > 0 {
-				columnArr := strings.Split(column, ".")
-				if len(columnArr) > 1 {
-					column = strings.Split(column, ".")[1]
+				columnAs := strings.Split(column, " as ")
+				if len(columnAs) > 1 {
+					column = strings.TrimSpace(strings.Split(column, " as ")[1])
+				} else {
+					columnArr := strings.Split(column, ".")
+					if len(columnArr) > 1 {
+						column = strings.Split(column, ".")[1]
+					}
 				}
 			}
 			row = append(row, fmt.Sprintf("%v", table[column]))
@@ -269,14 +275,18 @@ func (sysExportTemplateService *SysExportTemplateService) ExportTemplate(templat
 		return
 	}
 	var templateInfoMap = make(map[string]string)
+
+	columns, err := utils.GetJSONKeys(template.TemplateInfo)
+
 	err = json.Unmarshal([]byte(template.TemplateInfo), &templateInfoMap)
 	if err != nil {
 		return nil, "", err
 	}
 	var tableTitle []string
-	for key := range templateInfoMap {
+	for _, key := range columns {
 		tableTitle = append(tableTitle, templateInfoMap[key])
 	}
+
 	for i := range tableTitle {
 		fErr := f.SetCellValue("Sheet1", fmt.Sprintf("%s%d", getColumnName(i+1), 1), tableTitle[i])
 		if fErr != nil {
@@ -344,16 +354,15 @@ func (sysExportTemplateService *SysExportTemplateService) ImportExcel(templateID
 				item[key] = value
 			}
 
-			// 此处需要等待gorm修复HasColumn中的painc问题
-			//needCreated := tx.Migrator().HasColumn(template.TableName, "created_at")
-			//needUpdated := tx.Migrator().HasColumn(template.TableName, "updated_at")
-			//
-			//if item["created_at"] == nil && needCreated {
-			//	item["created_at"] = time.Now()
-			//}
-			//if item["updated_at"] == nil && needUpdated {
-			//	item["updated_at"] = time.Now()
-			//}
+			needCreated := tx.Migrator().HasColumn(template.TableName, "created_at")
+			needUpdated := tx.Migrator().HasColumn(template.TableName, "updated_at")
+
+			if item["created_at"] == nil && needCreated {
+				item["created_at"] = time.Now()
+			}
+			if item["updated_at"] == nil && needUpdated {
+				item["updated_at"] = time.Now()
+			}
 
 			items = append(items, item)
 		}
