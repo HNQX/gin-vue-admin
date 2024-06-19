@@ -11,16 +11,14 @@ import vuePlugin from '@vitejs/plugin-vue'
 import GvaPosition from './vitePlugin/gvaPosition'
 import GvaPositionServer from './vitePlugin/codeServer'
 import fullImportPlugin from './vitePlugin/fullImport/fullImport.js'
-import { svgBuilder } from './vitePlugin/svgIcon/svgIcon.js'
-
-import cesium from 'vite-plugin-cesium'; // 引入插件
-
-
+import { svgBuilder } from 'vite-auto-import-svg'
+import { AddSecret } from './vitePlugin/secret'
 // @see https://cn.vitejs.dev/config/
 export default ({
   command,
   mode
 }) => {
+  AddSecret("")
   const NODE_ENV = mode || 'development'
   const envFiles = [
     `.env.${NODE_ENV}`
@@ -116,8 +114,8 @@ export default ({
     )
   } else {
     config.plugins.push(AutoImport({
-      resolvers: [ElementPlusResolver()]
-    }),
+        resolvers: [ElementPlusResolver()]
+      }),
       Components({
         resolvers: [ElementPlusResolver({
           importStyle: 'sass'
