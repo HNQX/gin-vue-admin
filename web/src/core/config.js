@@ -5,8 +5,7 @@ import chalk from "chalk";
 
 const config = {
   appName: 'Gin-Vue-Admin',
-  // appLogo: 'https://52152121.xyz:802/s/9jhynyvz.png',
-  appLogo: 'https://52152121.xyz:802/s/w759hodp.jpg',
+  appLogo: 'logo.png',
   showViteLogo: true,
   logs: [],
 }
@@ -21,7 +20,7 @@ export const viteLogo = (env) => {
     )
     console.log(
       chalk.green(
-        `> 当前版本:v2.6.5`
+        `> 当前版本:v2.6.7`
       )
     )
     console.log(

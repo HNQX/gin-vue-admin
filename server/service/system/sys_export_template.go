@@ -190,8 +190,8 @@ func (sysExportTemplateService *SysExportTemplateService) ExportExcel(templateID
 		}
 	}
 	// 模板的默认limit
-	if limit == "" && template.Limit != 0 {
-		db = db.Limit(template.Limit)
+	if limit == "" && template.Limit != nil && *template.Limit != 0 {
+		db = db.Limit(*template.Limit)
 	}
 
 	// 通过参数传入offset
@@ -205,7 +205,7 @@ func (sysExportTemplateService *SysExportTemplateService) ExportExcel(templateID
 
 	// 获取当前表的所有字段
 	table := template.TableName
-	orderColumns, err := global.GVA_DB.Migrator().ColumnTypes(table)
+	orderColumns, err := db.Migrator().ColumnTypes(table)
 	if err != nil {
 		return nil, "", err
 	}
@@ -248,7 +248,7 @@ func (sysExportTemplateService *SysExportTemplateService) ExportExcel(templateID
 	}
 	var rows [][]string
 	rows = append(rows, tableTitle)
-	for _, table := range tableMap {
+	for _, exTable := range tableMap {
 		var row []string
 		for _, column := range columns {
 			if len(template.JoinTemplate) > 0 {
@@ -262,15 +262,20 @@ func (sysExportTemplateService *SysExportTemplateService) ExportExcel(templateID
 					}
 				}
 			}
-			row = append(row, fmt.Sprintf("%v", table[column]))
+			// 需要对时间类型特殊处理
+			if t, ok := exTable[column].(time.Time); ok {
+				row = append(row, t.Format("2006-01-02 15:04:05"))
+			} else {
+				row = append(row, fmt.Sprintf("%v", exTable[column]))
+			}
 		}
 		rows = append(rows, row)
 	}
 	for i, row := range rows {
 		for j, colCell := range row {
-			err := f.SetCellValue("Sheet1", fmt.Sprintf("%s%d", getColumnName(j+1), i+1), colCell)
-			if err != nil {
-				return nil, "", err
+			sErr := f.SetCellValue("Sheet1", fmt.Sprintf("%s%d", getColumnName(j+1), i+1), colCell)
+			if sErr != nil {
+				return nil, "", sErr
 			}
 		}
 	}

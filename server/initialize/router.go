@@ -61,6 +61,11 @@ func Routers() *gin.Engine {
 	// 方便统一添加路由组前缀 多服务器上线使用
 
 	PublicGroup := Router.Group(global.GVA_CONFIG.System.RouterPrefix)
+
+	PrivateGroup := Router.Group(global.GVA_CONFIG.System.RouterPrefix)
+
+	PrivateGroup.Use(middleware.JWTAuth()).Use(middleware.CasbinHandler())
+
 	{
 		// 健康监测
 		PublicGroup.GET("/health", func(c *gin.Context) {
@@ -71,8 +76,7 @@ func Routers() *gin.Engine {
 		systemRouter.InitBaseRouter(PublicGroup) // 注册基础功能路由 不做鉴权
 		systemRouter.InitInitRouter(PublicGroup) // 自动初始化相关
 	}
-	PrivateGroup := Router.Group(global.GVA_CONFIG.System.RouterPrefix)
-	PrivateGroup.Use(middleware.JWTAuth()).Use(middleware.CasbinHandler())
+
 	{
 		systemRouter.InitApiRouter(PrivateGroup, PublicGroup)       // 注册功能api路由
 		systemRouter.InitJwtRouter(PrivateGroup)                    // jwt相关路由
@@ -80,7 +84,7 @@ func Routers() *gin.Engine {
 		systemRouter.InitMenuRouter(PrivateGroup)                   // 注册menu路由
 		systemRouter.InitSystemRouter(PrivateGroup)                 // system相关路由
 		systemRouter.InitCasbinRouter(PrivateGroup)                 // 权限相关路由
-		systemRouter.InitAutoCodeRouter(PrivateGroup)               // 创建自动化代码
+		systemRouter.InitAutoCodeRouter(PrivateGroup, PublicGroup)  // 创建自动化代码
 		systemRouter.InitAuthorityRouter(PrivateGroup)              // 注册角色路由
 		systemRouter.InitSysDictionaryRouter(PrivateGroup)          // 字典管理
 		systemRouter.InitAutoCodeHistoryRouter(PrivateGroup)        // 自动化代码历史
@@ -94,7 +98,12 @@ func Routers() *gin.Engine {
 	}
 
 	//插件路由安装
-	InstallPlugin(PrivateGroup, PublicGroup)
+	InstallPlugin(PrivateGroup, PublicGroup, Router)
+
+	// 注册业务路由
+	initBizRouter(PrivateGroup, PublicGroup)
+
+	global.GVA_ROUTERS = Router.Routes()
 
 	global.GVA_LOG.Info("router register success")
 	return Router

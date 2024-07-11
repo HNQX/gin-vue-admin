@@ -4,7 +4,7 @@ import { ref, watchEffect, reactive } from 'vue'
 import originSetting from  "@/config.json"
 import {  setBodyPrimaryColor } from '@/utils/format'
 export const useAppStore = defineStore('app', () => {
-  const theme = ref(localStorage.getItem('theme') || 'light')
+  const theme = ref(localStorage.getItem('theme')  || originSetting.darkMode || 'auto')
   const device = ref("")
   const config = reactive({
     weakness: false,
@@ -121,13 +121,14 @@ export const useAppStore = defineStore('app', () => {
   }
 
   const toggleSideModel= (e) =>{
-    config.side_mode = e 
+    config.side_mode = e
   }
 
   if(config.darkMode === 'auto'){
     toggleDarkModeAuto()
   }
 
+    toggleGrey(config.grey)
 
   return {
     theme,

@@ -2,6 +2,8 @@ package system
 
 import (
 	"fmt"
+	"github.com/goccy/go-json"
+	"io"
 	"net/url"
 	"strings"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils/request"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -64,9 +67,9 @@ func (autoApi *AutoCodeApi) CreateTemp(c *gin.Context) {
 	var menuId uint
 	if a.AutoCreateApiToSql {
 		if ids, err := autoCodeService.AutoCreateApi(&a); err != nil {
-			global.GVA_LOG.Error("自动化创建失败!请自行清空垃圾数据!", zap.Error(err))
+			global.GVA_LOG.Error("自动化创建API失败!", zap.Error(err))
 			c.Writer.Header().Add("success", "false")
-			c.Writer.Header().Add("msg", url.QueryEscape("自动化创建失败!请自行清空垃圾数据!"))
+			c.Writer.Header().Add("msg", url.QueryEscape("自动化创建失败!请自行清空垃圾数据或取消自动创建API!"))
 			return
 		} else {
 			apiIds = ids
@@ -74,9 +77,10 @@ func (autoApi *AutoCodeApi) CreateTemp(c *gin.Context) {
 	}
 	if a.AutoCreateMenuToSql {
 		if id, err := autoCodeService.AutoCreateMenu(&a); err != nil {
-			global.GVA_LOG.Error("自动化创建失败!请自行清空垃圾数据!", zap.Error(err))
+			global.GVA_LOG.Error("自动化创建菜单失败!", zap.Error(err))
 			c.Writer.Header().Add("success", "false")
-			c.Writer.Header().Add("msg", url.QueryEscape("自动化创建失败!请自行清空垃圾数据!"))
+			c.Writer.Header().Add("msg", url.QueryEscape("自动化创建失败!请自行清空垃圾数据或取消自动创建菜单!"))
+			return
 		} else {
 			menuId = id
 		}
@@ -301,6 +305,48 @@ func (autoApi *AutoCodeApi) InstallPlugin(c *gin.Context) {
 			"code": server,
 			"msg":  serverStr,
 		}}, c)
+}
+
+func (autoApi *AutoCodeApi) LLMAuto(c *gin.Context) {
+	prompt := c.Query("prompt")
+	mode := c.Query("mode")
+	params := make(map[string]string)
+	params["prompt"] = prompt
+	params["mode"] = mode
+	path := strings.ReplaceAll(global.GVA_CONFIG.AutoCode.AiPath, "{FUNC}", "api/chat/ai")
+	res, err := request.HttpRequest(
+		path,
+		"POST",
+		nil,
+		params,
+		nil,
+	)
+	if err != nil {
+		global.GVA_LOG.Error("大模型生成失败!", zap.Error(err))
+		response.FailWithMessage("大模型生成失败"+err.Error(), c)
+		return
+	}
+	var resStruct response.Response
+	b, err := io.ReadAll(res.Body)
+	defer res.Body.Close()
+	if err != nil {
+		global.GVA_LOG.Error("大模型生成失败!", zap.Error(err))
+		response.FailWithMessage("大模型生成失败"+err.Error(), c)
+		return
+	}
+	err = json.Unmarshal(b, &resStruct)
+	if err != nil {
+		global.GVA_LOG.Error("大模型生成失败!", zap.Error(err))
+		response.FailWithMessage("大模型生成失败"+err.Error(), c)
+		return
+	}
+
+	if resStruct.Code == 7 {
+		global.GVA_LOG.Error("大模型生成失败!"+resStruct.Msg, zap.Error(err))
+		response.FailWithMessage("大模型生成失败"+resStruct.Msg, c)
+		return
+	}
+	response.OkWithData(resStruct.Data, c)
 }
 
 // PubPlug
